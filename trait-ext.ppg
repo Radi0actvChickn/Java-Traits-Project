@@ -1,0 +1,65 @@
+includes java12.cup;
+
+non terminal ClassDecl trait_declaration;
+
+override type_declaration ::=
+                    // ClassDecl
+        class_declaration:a
+            {: RESULT = a; :}
+    |   interface_declaration:a
+            {: RESULT = a; :}
+    |   trait_declaration:a
+            {: RESULT = a; :}
+    |   SEMICOLON
+            {: RESULT = null; :}
+    ;
+
+override class_member_declaration ::=
+                    // List of ClassMember
+        field_declaration:a
+            {: RESULT = a; :}
+    |   method_declaration:a
+            {: List<ClassMember> l = new LinkedList<>();
+               l.add(a);
+               RESULT = l; :}
+        /* repeat the prod for 'class_declaration' here: */
+    |   modifiers_opt:a CLASS:n IDENTIFIER:b
+                    super_opt:c interfaces_opt:d class_body:e
+            {: List<ClassMember> l = new LinkedList<>();
+               l.add(parser.nf.ClassDecl(parser.pos(n, e),
+                        a, parser.nf.Id(parser.pos(b), b.getIdentifier()), c, d, e));
+               RESULT = l; :}
+    |   interface_declaration:a
+            {: List<ClassMember> l = new LinkedList<>();
+               l.add(a);
+               RESULT = l; :}
+    |   USE IDENTIFIER:b
+            {: RESULT = b; :}
+    ;
+
+trait_declaration ::=
+                    //ClassDecl
+        TRAIT:n IDENTIFIER:b LBRACE:d require_method:a provided_method_c RBRACE:e
+            {: RESULT = parser.nf.ClassDecl(parser.pos(d, e), a); :}
+    ;
+  
+require_method ::=
+                    //MethodDecl ??
+        REQUIRES method_header:a
+            {: RESULT = a; :}
+    ;
+
+provided_method ::=
+                    //MethodDecl ??
+        trait_method_modifier:b method_header:a block:c
+            {: RESULT = parser.nf.MethodDecl(parser.pos(b, c), a); :}
+    ;
+
+trait_method_modifier ::=
+                    //Flags
+            {: RESULT = Flags.NONE; :}
+    |   PUBLIC
+            {: RESULT = Flags.PUBLIC; :}
+    |   PRIVATE
+            {: RESULT = Flags.PRIVATE; :}
+    ;
